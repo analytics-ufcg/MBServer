@@ -1,0 +1,37 @@
+{
+  "name": "mbserver",
+  "version": "1.0.0",
+  "description": "Melhor Busão API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" &&  exit 1",
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/analytics-ufcg/MBServer.git"
+  },
+  "keywords": [
+    "Melhor",
+    "Busão",
+    "API",
+    "REST",
+    "Application",
+    "Server"
+  ],
+  "author": "Analytics Lab",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/analytics-ufcg/MBServer/issues"
+  },
+  "homepage": "https://github.com/analytics-ufcg/MBServer#readme",
+  "devDependencies": {
+    "nodemon": "^1.11.0"
+  },
+  "dependencies": {
+    "config": "^1.26.1",
+    "express": "^4.15.3",
+    "mongoose": "^4.10.1",
+    "request": "^2.81.0"
+  }
+}
