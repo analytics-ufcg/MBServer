@@ -29,9 +29,9 @@
     "nodemon": "^1.11.0"
   },
   "dependencies": {
+    "body-parser": "^1.17.2",
     "config": "^1.26.1",
     "express": "^4.15.3",
-    "mongoose": "^4.10.1",
     "query-string": "^4.3.4",
     "request": "^2.81.0"
   }

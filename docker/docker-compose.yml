@@ -1,0 +1,18 @@
+version: '2'
+services:
+  mbserver:
+    image: node:6.10.3-alpine
+    container_name: mbserver-api
+    ports:
+      - "30000:30000"
+    volumes_from:
+      - mbserver-app
+    working_dir: /usr/src/app
+    command: sh server_build.sh
+
+  mbserver-app:
+    image: mysql
+    container_name: mbserver-source
+    volumes:
+      - ./app:/usr/src/app
+    command: "true"
