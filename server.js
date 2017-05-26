@@ -12,3 +12,5 @@ routes(app);
 app.listen(port);
 
 console.log('Melhor Busão RESTful API server started on: ' + port);
+
+module.exports = app;
