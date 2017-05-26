@@ -52,3 +52,51 @@ describe("OTPRequestTest", () => {
       });
   });
 });
+
+describe("BTRRequestTest", () => {
+  it("The BTR cg response must succeed, testing valid parameters", (done) => {
+    chai.request(server)
+      .get("/get_best_trips?city=cg&route=0303&time=16:20:55&date=2016-12-20&bus_stop_id=451&closest_trip_type=single_trip")
+      .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body).to.be.an("array");
+          expect(res.body).to.not.be.empty;
+          expect(res.body).to.have.lengthOf(1);
+          expect(res.body[0]).to.contain.keys("route", "date", "mean.timetable", "passengers.number", "trip.duration");
+          done();
+      });
+  });
+
+  it("The BTR cg response must return error, testing wrong parameters", (done) => {
+    chai.request(server)
+      .get("/get_best_trips?city=cg&route=9874&time=16:20:55&date=2016-12-20&bus_stop_id=451&closest_trip_type=single_trip")
+      .end((err, res) => {
+        expect(res.body).to.be.an("array");
+        expect(res.body[0]).to.be.an("string");
+        done();
+      });
+  });
+
+  it("The BTR ctba response must succeed, testing valid parameters", (done) => {
+    chai.request(server)
+      .get("/get_best_trips?city=ctba&route=022&time=10:00:00&date=2016-10-26&bus_stop_id=26276&closest_trip_type=single_trip")
+      .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body).to.be.an("array");
+          expect(res.body).to.not.be.empty;
+          expect(res.body).to.have.lengthOf(1);
+          expect(res.body[0]).to.contain.keys("route", "date", "mean.timetable", "passengers.number", "trip.duration");
+          done();
+      });
+  });
+
+  it("The BTR ctba response must return error, testing wrong parameters", (done) => {
+    chai.request(server)
+      .get("/get_best_trips?city=ctba&route=9879&time=10:00:00&date=2016-10-26&bus_stop_id=26276&closest_trip_type=single_trip")
+      .end((err, res) => {
+        expect(res.body).to.be.an("array");
+        expect(res.body[0]).to.be.an("string");
+        done();
+      });
+  });
+});
