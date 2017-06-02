@@ -53,32 +53,40 @@ exports.get_btr_routes_plans = function(req, res){
           }
         );
 
-        promises.push(data2.map(getBTR));
-        // console.log(promises);
-        // var results = Promise.all(promises);
-        // results.push(promises);
+        promises.push(
+          new Promise(function(resolve, reject){
+            return resolve(
+              Promise.all(data2.map(getBTR))
+                .then(function(data3){
+                  return data3;
+                })
+            )}
+          )
+        );
       }
       Promise.all(promises).then(function(data3){
-        // console.log(data);
-        // console.log(itineraries[i]);
-        // console.log(JSON.parse(data).plan.itineraries);
-        // console.log(data3);
-        // var data = JSON.parse(data);
         var result = JSON.parse(data);
         for (var i = 0; i < data3.length; i++) {
-          console.log(data3);
-          // console.log(result.plan.itineraries[i]);
-          result.plan.itineraries[i]["btr_passengers"] = data3[i].reduce(function(d1, d2){
-            return d1["passenger_number"] > d2["passenger_number"] ? d1["passenger_number"] : d2["passenger_number"];
-          });
-          result.plan.itineraries[i]["trip_duration"] = data3[i].reduce(function(d1, d2){
-            return d1["trip_duration"] + d2["trip_duration"];
-          });
-          // console.log(result.plan.itineraries[i]);
+          result.plan.itineraries[i]["btr_passengers"] = data3[i]
+            .map(
+              (d) => d["passenger_number"]
+            ).reduce(
+              (d1, d2) => d1 > d2 ? d1 : d2
+            );
+
+          result.plan.itineraries[i]["trip_duration"] = data3[i]
+            .map(
+              (d) => d["trip_duration"]
+            )
+            .reduce(
+              (d1, d2) => d1 + d2
+            );
         }
+        res.send(result);
       });
     })
     .catch(function(err){
       console.error(err);
+      res.send();
     })
 };
