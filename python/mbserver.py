@@ -1,3 +1,4 @@
+# coding: UTF-8
 import tornado.ioloop
 import tornado.web
 
@@ -21,42 +22,30 @@ import sys
 define("port", default=8888, help="run on the given port", type=int)
 
 class IndexHandler(tornado.web.RequestHandler):
+
+    def createDataframeFromParams(self, dictionary, sc):
+        sc.parallelize({"bla": 123}).toDF().show()
+				
     @tornado.web.asynchronous
-    def get(self):
+    def post(self):
 
         sconf = SparkConf().setAppName("DurationPredction")
         sc = SparkContext(conf=sconf)  # SparkContext
         sqlContext = SQLContext(sc)
 
-        # df = sqlContext.read.format("com.databricks.spark.csv").option("header", "true").option("inferSchema","true").load('hdfs://localhost:9000/btr/ctba/data/prediction_data.csv')
-        # df = df.withColumn("totalpassengers", df['totalpassengers'].cast('Double'))
-        #
-        # string_columns = ["route", "week_day", "difference_previous_schedule", "difference_next_schedule"]
-        # features = ["route_index", "week_day_index", "group_15_minutes", "difference_next_schedule_index", "difference_previous_schedule_index"]
-        #
-        # indexers = [StringIndexer(inputCol=column, outputCol=column+"_index").fit(df) for column in string_columns]
-    	# pipeline = Pipeline(stages=indexers)
-    	# df_r = pipeline.fit(df).transform(df)
-        #
-    	# assembler = VectorAssembler(
-    	# inputCols=features,
-    	# outputCol='features')
-        #
-    	# assembled_df = assembler.transform(df_r)
-
-        model_location = "hdfs://localhost:9000/btr/ctba/models/trip_duration"
+        model_location = "../../../duration_model"
+        
+        params = self.request.body_arguments
+        print(params)
+        self.createDataframeFromParams(params, sc)
+        
         duration_model_loaded = LinearRegressionModel.load(model_location)
-        #
-        # predictions = duration_model_loaded.transform(assembled_df)
-        # predictions_and_labels = predictions.rdd.map(lambda row: (row.prediction, row.duration))
-        # trainingSummary = RegressionMetrics(predictions_and_labels)
-
-        # response = duration_model_loaded.transform()
-
+				
         self.write("Coefficients: %s\n" % str(duration_model_loaded.coefficients))
 
         sc.stop()
         self.finish()
+		
 
 app = tornado.web.Application([
     (r'/previsao', IndexHandler),
