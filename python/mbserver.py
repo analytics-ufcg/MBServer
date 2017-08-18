@@ -27,24 +27,43 @@ define("port", default=8888, help="run on the given port", type=int)
 
 
 class IndexHandler(tornado.web.RequestHandler):
-    def prediction(self):
-        # route,tripNumOrig,shapeId,shapeSequence,shapeLatOrig,shapeLonOrig,distanceTraveledShapeOrig,busCode,gpsPointId,gpsLat,gpsLon,distanceToShapePoint,timestampOrig,busStopIdOrig,problem,date,busStopIdDest,timestampDest,tripNumDest,shapeLatDest,shapeLonDest,distanceTraveledShapeDest,duration,distance,hourOrig,hourDest,isRushOrig,isRushDest,periodOrig,periodDest,weekDay,weekOfYear,dayOfMonth,month,isHoliday,isWeekend,isRegularDay
-        # 203,1,3855,4649120,-25.487704010585034,-49.29429710552256,484.602,HE710,,-25.487635,-49.294308,7.7511497,05:20:48,25739,NO_PROBLEM,2017-02-01,25737,05:21:29,1,-25.48449704979423,-49.29378227055224,847.103,41,362.501,5,5,0,0,morning,morning,Wed,5,1,2,0,0,1
+    def predict(self, model, test_data):
         # predicting_json_example = {"periodOrig": "morning", "weekDay": "Mon", "route": "203",
-        #                            "tripNumOrig": 1, "shapeId": 3855, "shapeLatOrig": -25.487704010585034,
-        #                            "shapeLonOrig": -25.487704010585034, "busStopIdOrig": 25739, "busStopIdDest": 25737,
-        #                            "shapeLatDest":-25.48449704979423, "shapeLonDest": -49.29378227055224, "hourOrig": 10,
-        #                            "isRushOrig": 1, "weekOfYear": 5, "dayOfMonth": 2, "month":2,
-        #                            "isHoliday": 0, "isWeekend": 1, "isRegularDay": 0, "distance": 362.501}
-        pass
+        #                           "tripNumOrig": 1, "shapeId": 3855, "shapeLatOrig": -25.487704010585034,
+        #                           "shapeLonOrig": -25.487704010585034, "busStopIdOrig": 25739, "busStopIdDest": 25737,
+        #                           "shapeLatDest":-25.48449704979423, "shapeLonDest": -49.29378227055224,
+        #                           "hourOrig": 10,"isRushOrig": 1, "weekOfYear": 5, "dayOfMonth": 2, "month":2,
+        #                           "isHoliday": 0, "isWeekend": 1, "isRegularDay": 0, "distance": 362.501}
+        prediction = model.transform(test_data)
+
+        return prediction.toJSON()
+
+    def data_pre_proc(self, df,
+                      string_columns=["periodOrig", "weekDay", "route"],
+                      features=["tripNumOrig", "shapeId", "shapeLatOrig", "shapeLonOrig",
+                                "busStopIdOrig", "busStopIdDest", "shapeLatDest", "shapeLonDest",
+                                "hourOrig", "isRushOrig", "weekOfYear", "dayOfMonth",
+                                "month", "isHoliday", "isWeekend", "isRegularDay", "distance"]):
+        df = df.na.drop(subset=string_columns + features)
+
+        indexers = [StringIndexer(inputCol=column, outputCol=column + "_index").fit(df) for column in string_columns]
+        pipeline = Pipeline(stages=indexers)
+        df_r = pipeline.fit(df).transform(df)
+
+        assembler = VectorAssembler(
+            inputCols=features + map(lambda c: c + "_index", string_columns),
+            outputCol='features')
+
+        assembled_df = assembler.transform(df_r)
+
+        return assembled_df
 
     def createDataframeFromParams(self, dictionary, sc):
-        #dictionary = dict(map(lambda (k, v): (k, v[0]), dictionary.iteritems()))
         df = sc.parallelize([dictionary])\
             .map(lambda d: Row(**OrderedDict(sorted((d).items()))))\
             .toDF()
-        df.show()
-        df.printSchema()
+
+        return df
 
     @tornado.web.asynchronous
     def post(self):
@@ -52,16 +71,17 @@ class IndexHandler(tornado.web.RequestHandler):
         sc = SparkContext(conf=sconf)  # SparkContext
         sqlContext = SQLContext(sc)
 
+        request_params = tornado.escape.json_decode(self.request.body)
+
+        df = self.createDataframeFromParams(request_params, sc)
+        assembled_df = self.data_pre_proc(df)
+
         model_location = "/local/orion/bigsea/btr_2.0/duration_model"
+        duration_model = LinearRegressionModel.load(model_location)
 
-        params = tornado.escape.json_decode(self.request.body)
-        print self.request
-        print params
-        self.createDataframeFromParams(params, sc)
+        prediction = self.predict(duration_model, assembled_df)
 
-        duration_model_loaded = LinearRegressionModel.load(model_location)
-
-        self.write("Coefficients: %s\n" % str(duration_model_loaded.coefficients))
+        self.write(prediction.first())
 
         sc.stop()
         self.finish()
