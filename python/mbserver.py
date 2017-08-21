@@ -29,7 +29,7 @@ define("port", default=8888, help="run on the given port", type=int)
 class IndexHandler(tornado.web.RequestHandler):
     def predict(self, model, test_data):
         # predicting_json_example = {"periodOrig": "morning", "weekDay": "Mon", "route": "203",
-        #                           "tripNumOrig": 1, "shapeId": 3855, "shapeLatOrig": -25.487704010585034,
+        #                           "shapeLatOrig": -25.487704010585034,
         #                           "shapeLonOrig": -25.487704010585034, "busStopIdOrig": 25739, "busStopIdDest": 25737,
         #                           "shapeLatDest":-25.48449704979423, "shapeLonDest": -49.29378227055224,
         #                           "hourOrig": 10,"isRushOrig": 1, "weekOfYear": 5, "dayOfMonth": 2, "month":2,
@@ -40,7 +40,7 @@ class IndexHandler(tornado.web.RequestHandler):
 
     def data_pre_proc(self, df,
                       string_columns=["periodOrig", "weekDay", "route"],
-                      features=["tripNumOrig", "shapeId", "shapeLatOrig", "shapeLonOrig",
+                      features=["shapeLatOrig", "shapeLonOrig",
                                 "busStopIdOrig", "busStopIdDest", "shapeLatDest", "shapeLonDest",
                                 "hourOrig", "isRushOrig", "weekOfYear", "dayOfMonth",
                                 "month", "isHoliday", "isWeekend", "isRegularDay", "distance"]):
@@ -76,8 +76,11 @@ class IndexHandler(tornado.web.RequestHandler):
         df = self.createDataframeFromParams(request_params, sc)
         assembled_df = self.data_pre_proc(df)
 
-        model_location = "/local/orion/bigsea/btr_2.0/duration_model"
+        # model_location = "/local/orion/bigsea/btr_2.0/duration_model"
+        model_location = "hdfs://localhost:9000/btr/ctba/models/trip_duration"
         duration_model = LinearRegressionModel.load(model_location)
+
+        print duration_model.coefficients
 
         prediction = self.predict(duration_model, assembled_df)
 

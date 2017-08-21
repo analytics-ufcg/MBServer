@@ -3,3 +3,4 @@ config/
 docker/app/
 .Rhistory
 .idea/
+mbserver-env/
