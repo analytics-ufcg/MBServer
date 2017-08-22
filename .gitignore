@@ -5,3 +5,5 @@ docker/app/
 .idea/
 mbserver-env/
 *.pyc
+src/Dockerfile
+src/requirements.txt
