@@ -19,6 +19,7 @@ class SparkHandler:
         self.sc = SparkContext(conf=SparkConf().setAppName(appName))
         self.sqlContext = SQLContext(self.sc)
         self.duration_model = LinearRegressionModel.load(modelPath)
+        self.pipeline = Pipeline.load("hdfs://localhost:9000/btr/ctba/train_pipeline")
 
     def predict(self, test_data):
         # predicting_json_example = {"periodOrig": "morning", "weekDay": "Mon", "route": "203",
@@ -30,8 +31,6 @@ class SparkHandler:
 
         df = self.createDataframeFromParams(test_data)
         assembled_df = self.data_pre_proc(df=df)
-
-        print assembled_df.show
 
         prediction = self.duration_model.transform(assembled_df)
 
@@ -50,9 +49,12 @@ class SparkHandler:
                                 "month", "isHoliday", "isWeekend", "isRegularDay", "distance"]):
         df = df.na.drop(subset=string_columns + features)
 
-        indexers = [StringIndexer(inputCol=column, outputCol=column + "_index").fit(df) for column in string_columns]
-        pipeline = Pipeline(stages=indexers)
-        df_r = pipeline.fit(df).transform(df)
+        # indexers = [StringIndexer(inputCol=column, outputCol=column + "_index").fit(df) for column in string_columns]
+        # pipeline = Pipeline(stages=indexers)
+
+        # pipeline = Pipeline.load("hdfs://localhost:9000/btr/ctba/train_pipeline")
+
+        df_r = self.pipeline.fit(df).transform(df)
 
         assembler = VectorAssembler(
             inputCols=features + map(lambda c: c + "_index", string_columns),
