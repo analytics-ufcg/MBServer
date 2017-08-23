@@ -40,7 +40,7 @@ class IndexHandler(tornado.web.RequestHandler):
 
     def data_pre_proc(self, df,
                       string_columns=["periodOrig", "weekDay", "route"],
-                      features=["tripNumOrig", "shapeId", "shapeLatOrig", "shapeLonOrig",
+                      features=["shapeLatOrig", "shapeLonOrig",
                                 "busStopIdOrig", "busStopIdDest", "shapeLatDest", "shapeLonDest",
                                 "hourOrig", "isRushOrig", "weekOfYear", "dayOfMonth",
                                 "month", "isHoliday", "isWeekend", "isRegularDay", "distance"]):
