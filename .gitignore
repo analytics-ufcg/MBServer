@@ -3,3 +3,7 @@ config/
 docker/app/
 .Rhistory
 .idea/
+mbserver-env/
+*.pyc
+src/Dockerfile
+src/requirements.txt
