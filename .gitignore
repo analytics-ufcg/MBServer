@@ -7,3 +7,4 @@ mbserver-env/
 *.pyc
 src/Dockerfile
 src/requirements.txt
+python/src/btr_otp_config.py
