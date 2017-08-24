@@ -19,7 +19,7 @@ class SparkHandler:
         self.sc = SparkContext(conf=SparkConf().setAppName(appName))
         self.sqlContext = SQLContext(self.sc)
         self.duration_model = LinearRegressionModel.load(modelPath)
-        self.pipeline = Pipeline.load("hdfs://localhost:9000/btr/ctba/train_pipeline")
+        self.pipeline = Pipeline.load("hdfs://172.17.0.1:9000/btr/ctba/train_pipeline")
 
     def predict(self, test_data):
         # predicting_json_example = {"periodOrig": "morning", "weekDay": "Mon", "route": "203",

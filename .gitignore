@@ -6,4 +6,3 @@ docker/app/
 mbserver-env/
 *.pyc
 src/Dockerfile
-src/requirements.txt

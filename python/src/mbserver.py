@@ -32,7 +32,7 @@ app = tornado.web.Application([
 
 def startUp():
     global sparkHandler
-    modelPath = "hdfs://localhost:9000/btr/ctba/models/trip_duration"
+    modelPath = "hdfs://172.17.0.1:9000/btr/ctba/models/trip_duration"
     appName = "Duration Prediction"
     sparkHandler = SparkHandler(appName, modelPath)
     parse_command_line()
