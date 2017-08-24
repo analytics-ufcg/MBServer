@@ -28,6 +28,9 @@ class IndexHandler(tornado.web.RequestHandler):
 
 class JoinBTRandOTPHandler(tornado.web.RequestHandler):
 
+    def get_btr_prediction(self, otp_data):
+        pass
+
     @gen.coroutine
     def post(self):
         # query example: {
@@ -43,6 +46,8 @@ class JoinBTRandOTPHandler(tornado.web.RequestHandler):
 
         http_client = AsyncHTTPClient()
         response = yield http_client.fetch(query)
+
+        otp_data = tornado.escape.json_decode(response.body)
 
         self.write(response.body)
 
