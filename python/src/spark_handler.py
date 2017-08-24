@@ -13,13 +13,15 @@ from pyspark.ml.feature import StringIndexer
 from pyspark.ml.regression import LinearRegressionModel
 from pyspark.mllib.evaluation import RegressionMetrics
 
+import btr_otp_config
+
 class SparkHandler:
 
     def __init__(self, appName, modelPath):
         self.sc = SparkContext(conf=SparkConf().setAppName(appName))
         self.sqlContext = SQLContext(self.sc)
         self.duration_model = LinearRegressionModel.load(modelPath)
-        self.pipeline = Pipeline.load("hdfs://172.17.0.1:9000/btr/ctba/train_pipeline")
+        self.pipeline = Pipeline.load(btr_otp_config.PIPELINE_PATH)
 
     def predict(self, test_data):
         # predicting_json_example = {"periodOrig": "morning", "weekDay": "Mon", "route": "203",

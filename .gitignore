@@ -5,4 +5,4 @@ docker/app/
 .idea/
 mbserver-env/
 *.pyc
-src/Dockerfile
+python/src/btr_otp_config.py
