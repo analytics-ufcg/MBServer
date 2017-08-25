@@ -7,10 +7,11 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.options import define, options, parse_command_line
 
 from spark_handler import SparkHandler
-from datetime import datetime, date
 
 import btr_otp_config
 import urllib
+import ast
+from datetime import datetime, date
 
 define("port", default=8888, help="run on the given port", type=int)
 
@@ -38,7 +39,7 @@ class JoinBTRandOTPHandler(tornado.web.RequestHandler):
 
         self.weekday = self.date_fmt.weekday()
         wd = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        self.weekdays_str = wd[self.weekday]
+        self.weekday_str = wd[self.weekday]
 
         self.week_of_year = self.date_fmt.isocalendar()[1]
         self.is_holiday = 1 if self.date_fmt.month in [1, 6, 7, 12] else 0
@@ -54,7 +55,7 @@ class JoinBTRandOTPHandler(tornado.web.RequestHandler):
         features["periodOrig"] = self.period_origin
         features["isRushOrig"] = self.is_rush_hour
 
-        features["weekDay"] = self.weekday
+        features["weekDay"] = self.weekday_str
         features["weekOfYear"] = self.week_of_year
         features["dayOfMonth"] = self.date_fmt.day
         features["month"] = self.date_fmt.month
@@ -78,15 +79,14 @@ class JoinBTRandOTPHandler(tornado.web.RequestHandler):
         if leg["mode"] == "WALK":
             return leg["duration"]
         else:
-            a = sparkHandler.predict(self.feature_extractor(leg))
-            print a
-            return a
+            rdd_pred = sparkHandler.predict(self.feature_extractor(leg))
+            return ast.literal_eval(rdd_pred.first())["prediction"]
 
     def get_btr_prediction(self, otp_data):
         for it in otp_data["plan"]["itineraries"]:
             durations = map(self.get_btr_duration, it["legs"])
 
-            #it["btr-duration"] = reduce(lambda l1, l2: l1 + l2, durations)
+            it["btr-duration"] = reduce(lambda l1, l2: l1 + l2, durations)
 
         return otp_data
 
@@ -111,9 +111,9 @@ class JoinBTRandOTPHandler(tornado.web.RequestHandler):
 
         self.set_variables(request_params)
 
-        self.get_btr_prediction(otp_data)
+        otp_data_predicted = self.get_btr_prediction(otp_data)
 
-        self.write(response.body)
+        self.write(otp_data_predicted)
 
 
 app = tornado.web.Application([
