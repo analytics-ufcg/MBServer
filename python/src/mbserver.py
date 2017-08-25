@@ -75,18 +75,29 @@ class JoinBTRandOTPHandler(tornado.web.RequestHandler):
 
         return features
 
-    def get_btr_duration(self, leg):
-        if leg["mode"] == "WALK":
-            return leg["duration"]
-        else:
-            rdd_pred = sparkHandler.predict(self.feature_extractor(leg))
-            return ast.literal_eval(rdd_pred.first())["prediction"]
+    def get_btr_duration(self, legs):
+        walk_durations = list()
+        bus_legs = list()
+
+        for leg in legs:
+            if leg["mode"] == "WALK":
+                walk_durations.append(leg["duration"])
+            else:
+                bus_legs.append(leg)
+
+        bus_legs = map(self.feature_extractor, bus_legs)
+
+        rdd_pred = sparkHandler.predict(bus_legs)
+
+        predictions = map(ast.literal_eval, rdd_pred.collect())
+
+        bus_duration = map(lambda e: e["prediction"], predictions)
+
+        return reduce(lambda l1, l2: l1 + l2, walk_durations + bus_duration)
 
     def get_btr_prediction(self, otp_data):
         for it in otp_data["plan"]["itineraries"]:
-            durations = map(self.get_btr_duration, it["legs"])
-
-            it["btr-duration"] = reduce(lambda l1, l2: l1 + l2, durations)
+            it["btr-duration"] = self.get_btr_duration(it["legs"])
 
         return otp_data
 

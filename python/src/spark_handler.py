@@ -66,8 +66,8 @@ class SparkHandler:
 
         return assembled_df
 
-    def createDataframeFromParams(self, dictionary):
-        df = self.sc.parallelize([dictionary])\
+    def createDataframeFromParams(self, list_of_params):
+        df = self.sc.parallelize(list_of_params)\
             .map(lambda d: Row(**OrderedDict(sorted((d).items()))))\
             .toDF()
 
