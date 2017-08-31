@@ -14,11 +14,34 @@ from pyspark.ml.regression import LinearRegressionModel
 
 class SparkHandler:
 
-    def __init__(self, app_name, model_path, pipeline_path):
+    def __init__(self, app_name, model_path, pipeline_path, routes_stops_path):
         self.sc = SparkContext(conf=SparkConf().setAppName(app_name))
         self.sqlContext = SQLContext(self.sc)
         self.duration_model = LinearRegressionModel.load(model_path)
         self.pipeline = Pipeline.load(pipeline_path)
+        self.routes_stops = self.get_routes_stops(routes_stops_path)
+
+    def get_routes_stops(self, routes_stops_path):
+        df = self.sqlContext.read.format("com.databricks.spark.csv") \
+            .option("header", "true") \
+            .option("inferSchema", "true") \
+            .option("nullValue", "-") \
+            .load(routes_stops_path)
+
+        df_list_of_rows = map(lambda row: row.asDict(), df.collect())
+
+        routes_stops = dict()
+        for row in df_list_of_rows:
+            route, shape_id, bus_stop = row["route"], row["shapeId"], row["busStopId"]
+
+            if route not in routes_stops:
+                routes_stops[route] = dict()
+            if shape_id not in routes_stops[route]:
+                routes_stops[route][shape_id] = list()
+
+            routes_stops[route][shape_id].append(bus_stop)
+
+        return routes_stops
 
     def predict(self, test_data):
         # predicting_json_example = {"periodOrig": "morning", "weekDay": "Mon", "route": "203",
@@ -58,7 +81,41 @@ class SparkHandler:
             .map(lambda d: Row(**OrderedDict(sorted(d.items()))))\
             .toDF()
 
-        return df
+        df_dict = map(lambda row: row.asDict(), df.collect())
+
+        new_df_list = list()
+
+        for row in df_dict:
+            route, bus_stop_orig, bus_stop_dest = row["route"], row["busStopIdOrig"], row["busStopIdDest"]
+            found_shape = False
+            for shape in self.routes_stops[route]:
+                shape_stops_list = self.routes_stops[route][shape]
+                if bus_stop_orig in shape_stops_list and bus_stop_dest in shape_stops_list:
+                    found_shape = True
+                    i = 0
+                    found_first = False
+                    found_last = False
+                    while not (found_first and found_last):
+                        idx = i % len(shape_stops_list)
+                        if shape_stops_list[idx] == bus_stop_orig:
+                            found_first = True
+                        if found_first and shape_stops_list[idx] == bus_stop_dest:
+                            found_last = True
+
+                        if found_first:
+                            row_copy = row.copy()
+                            row_copy["busStopIdOrig"] = shape_stops_list[idx]
+                            row_copy["busStopIdDest"] = shape_stops_list[(idx + 1) % len(shape_stops_list)]
+                            new_df_list.append(row_copy)
+
+                        i += 1
+
+            if not found_shape:
+                new_df_list.append(row)
+
+        new_df = self.sc.parallelize(new_df_list).toDF()
+
+        return new_df
 
     def close(self):
         self.sc.stop()
