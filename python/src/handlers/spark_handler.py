@@ -32,14 +32,14 @@ class SparkHandler:
 
         routes_stops = dict()
         for row in df_list_of_rows:
-            route, shape_id, bus_stop = row["route"], row["shapeId"], row["busStopId"]
+            route, shape_id, bus_stop, distance = row["route"], row["shapeId"], row["busStopId"], row["distanceTraveledShape"]
 
             if route not in routes_stops:
                 routes_stops[route] = dict()
             if shape_id not in routes_stops[route]:
                 routes_stops[route][shape_id] = list()
 
-            routes_stops[route][shape_id].append(bus_stop)
+            routes_stops[route][shape_id].append((bus_stop, distance))
 
         return routes_stops
 
@@ -76,6 +76,16 @@ class SparkHandler:
 
         return assembled_df
 
+    def both_on_list(self, e1, e2, list):
+        found_e1 = False
+        found_e2 = False
+        for e in list:
+            if e[0] == e1:
+                found_e1 = True
+            if e[0] == e2:
+                found_e2 = True
+        return found_e1 and found_e2
+
     def create_dataframe_from_params(self, list_of_params):
         df = self.sc.parallelize(list_of_params)\
             .map(lambda d: Row(**OrderedDict(sorted(d.items()))))\
@@ -90,22 +100,24 @@ class SparkHandler:
             found_shape = False
             for shape in self.routes_stops[route]:
                 shape_stops_list = self.routes_stops[route][shape]
-                if bus_stop_orig in shape_stops_list and bus_stop_dest in shape_stops_list:
+                if self.both_on_list(bus_stop_orig, bus_stop_dest, shape_stops_list):
                     found_shape = True
                     i = 0
                     found_first = False
                     found_last = False
                     while not (found_first and found_last):
                         idx = i % len(shape_stops_list)
-                        if shape_stops_list[idx] == bus_stop_orig:
+                        if shape_stops_list[idx][0] == bus_stop_orig:
                             found_first = True
-                        if found_first and shape_stops_list[idx] == bus_stop_dest:
+                        if found_first and shape_stops_list[idx][0] == bus_stop_dest:
                             found_last = True
 
                         if found_first:
                             row_copy = row.copy()
-                            row_copy["busStopIdOrig"] = shape_stops_list[idx]
-                            row_copy["busStopIdDest"] = shape_stops_list[(idx + 1) % len(shape_stops_list)]
+                            row_copy["busStopIdOrig"] = shape_stops_list[idx][0]
+                            row_copy["busStopIdDest"] = shape_stops_list[(idx + 1) % len(shape_stops_list)][0]
+                            row_copy["distance"] = abs(shape_stops_list[(idx + 1) % len(shape_stops_list)][1]
+                                                       - shape_stops_list[idx][1])
                             new_df_list.append(row_copy)
 
                         i += 1
