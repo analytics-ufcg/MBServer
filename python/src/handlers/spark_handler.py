@@ -90,17 +90,11 @@ class SparkHandler:
                 found_e2 = True
         return found_e1 and found_e2
 
-    def create_dataframe_from_params(self, list_of_params):
-        df = self.sc.parallelize(list_of_params)\
-            .map(lambda d: Row(**OrderedDict(sorted(d.items()))))\
-            .toDF()
+    def create_dataframe_from_params(self, features_list):
+        new_features_list = list()
 
-        df_dict = map(lambda row: row.asDict(), df.collect())
-
-        new_df_list = list()
-
-        for row in df_dict:
-            route, bus_stop_orig, bus_stop_dest = row["route"], row["busStopIdOrig"], row["busStopIdDest"]
+        for feats in features_list:
+            route, bus_stop_orig, bus_stop_dest = feats["route"], feats["busStopIdOrig"], feats["busStopIdDest"]
             found_shape = False
             for shape_stops_list in self.routes_stops[route]:
                 if self.both_on_list(bus_stop_orig, bus_stop_dest, shape_stops_list):
@@ -116,21 +110,19 @@ class SparkHandler:
                             found_last = True
 
                         if found_first:
-                            row_copy = row.copy()
+                            row_copy = feats.copy()
                             row_copy["busStopIdOrig"] = shape_stops_list[idx][0]
                             row_copy["busStopIdDest"] = shape_stops_list[(idx + 1) % len(shape_stops_list)][0]
                             row_copy["distance"] = abs(shape_stops_list[(idx + 1) % len(shape_stops_list)][1]
                                                        - shape_stops_list[idx][1])
-                            new_df_list.append(row_copy)
+                            new_features_list.append(row_copy)
 
                         i += 1
 
             if not found_shape:
-                new_df_list.append(row)
+                new_features_list.append(feats)
 
-        print new_df_list
-
-        new_df = self.sc.parallelize(new_df_list).toDF()
+        new_df = self.sc.parallelize(new_features_list).toDF()
 
         return new_df
 
