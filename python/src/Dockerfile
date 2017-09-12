@@ -12,6 +12,8 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY handlers/ handlers/
+COPY mbserver.py .
+COPY requirements.txt .
 
 CMD [ "python", "mbserver.py" ]

@@ -10,7 +10,7 @@ from tornado.options import define, options, parse_command_line
 
 from handlers.spark_handler import SparkHandler
 from handlers.prediction_handler import PredictionHandler
-import btr_otp_config
+from config import btr_otp_config
 
 define("port", default=8888, help="run on the given port", type=int)
 

@@ -5,7 +5,6 @@ docker/app/
 .idea/
 mbserver-env/
 *.pyc
-python/src/btr_otp_config.py
-python/src/btr_otp_config_local.py
+python/src/config/
 src/handlers/*.pyc
 **/__init__.py
