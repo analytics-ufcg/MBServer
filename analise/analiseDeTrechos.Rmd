@@ -20,74 +20,58 @@ library(tidyverse)
 dados.bulma <- read_csv("~/Analytics/MBServer/analise/dadostratados.csv")
 ```
 
-```{r}
-# ggplot(dados.bulma, aes(x = as.factor(hourOrig), y = duration)) +
-# geom_jitter(aes(alpha = 0.5))
-# 
-# ggplot(dados.bulma, aes(x = as.factor(hourOrig), y = duration)) +
-# geom_boxplot()
-```
-
-Agrupando por data e calculando a media e mediana de cada hora.
-
-Calculando a média e mediana para cada hora sem agrupar por data
-
-```{r}
-# temp2 <- dados.bulma %>% group_by(hourOrig) %>%
-#   summarise(media = mean(duration),
-#             mediana = median(duration))
-# 
-# ggplot(temp2, aes(x = as.factor(hourOrig), y = media, fill = as.factor(hourOrig))) +
-#     geom_bar(width = 1, stat="identity")
-
-```
-
 Comparando a hora com as demais horas do dia
 (Para aquele dia, como se comporta aquela hora em comparação com as demais)
 
 ```{r}
-temp1 <- dados.bulma %>% group_by(date, hourOrig) %>%
-  summarise(media = mean(duration),
-            mediana = median(duration))
+summarised.dates <- dados.bulma %>% group_by(date) %>%
+  summarise(meanDuration = mean(duration),
+            medianDuration = median(duration))
 
-# mediana por data
-temp3 <- dados.bulma %>%
-  group_by(date) %>%
-  summarise(median_date = median(duration))
 
-# mediana por data e hora
-temp4 <- left_join(temp1, temp3, by = "date")
+temp1 <- dados.bulma %>% select(date, hourOrig, hourDest, duration)
+temp1 <- left_join(temp1, summarised.dates, by = "date")
 
-# Quantos segundos a mediana da hora difere da mediana do dia
-temp4 <- temp4 %>% mutate(
-  diff_medians = mediana - median_date
+# Diferença entre cada duração e a duração mediana do dia
+temp1 <- temp1 %>% mutate(
+  diffFromMedian = duration - median
 )
 
-temp5 <- temp4 %>% group_by(hourOrig) %>%
-  summarise(media_diff_mediana = mean(diff_medians))
+# Mediana das diferenças por hora
+temp2 <- temp1 %>% group_by(hourOrig) %>%
+  summarise(
+   medianOfDiffs = median(diffFromMedian)
+)
 
 # plot
-ggplot(temp5, aes(as.factor(hourOrig), media_diff_mediana)) +
+ggplot(temp2, aes(as.factor(hourOrig), medianOfDiffs)) +
   geom_bar(stat = "identity", fill = "#2f4c56", legend = FALSE) + 
   scale_y_continuous("Média das diferenças (em segundos)") +
   theme(axis.title.x = element_blank()) +
-  labs(title = "Quanto (em média) a mediana das durações de cada hora difere \nda mediana das durações do dia")
+  labs(title = "Mediana das diferenças entre as durações de viagens e a duração mediana do dia")
 
 ```
 
 ## Dia da semana
 ```{r}
-summary.weeks <- dados.bulma %>% group_by(weekOfYear) %>%
+summarised.weeks <- dados.bulma %>% group_by(weekOfYear) %>%
   summarise(medianWeek = median(duration))
 
-summary.weekdays <- dados.bulma %>% group_by(weekOfYear, weekDay) %>%
-  summarise(medianWeekday = median(duration))
+temp3 <- dados.bulma %>% select(weekOfYear, weekDay, duration)
+temp3 <- left_join(temp3, summarised.weeks, by = "weekOfYear")
 
-summary.weekdays <- left_join(summary.weekdays, summary.weeks, by = "weekOfYear")
+# Diferença entre cada duração e a duração mediana da semana
+temp3 <- temp3 %>% mutate(
+  diffFromMedian = duration - medianWeek
+)
 
-summary.weekdays$diffWeekdayToWeek <- summary.weekdays$medianWeekday - summary.weekdays$medianWeek
+# Mediana das diferenças por dia da semana
+temp4 <- temp3 %>% group_by(weekDay) %>%
+  summarise(
+   medianOfDiffs = median(diffFromMedian)
+)
 
-ggplot(summary.weekdays, aes(as.factor(weekDay), diffWeekdayToWeek)) +
+ggplot(temp4, aes(as.factor(weekDay), medianOfDiffs)) +
   geom_bar(stat = "identity", fill = "#2f4c56", legend = FALSE) + 
   scale_y_continuous("Média das diferenças (em segundos)") +
   theme(axis.title.x = element_blank()) +
