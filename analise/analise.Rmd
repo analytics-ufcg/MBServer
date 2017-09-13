@@ -20,7 +20,7 @@ library(ggplot2)
 ```{r}
 # Read files from one folder and bind them together into one df
 
-data_directory_path = "~/Analytics/MBServer/analise/testData"
+data_directory_path = "testData/"
 
 filenames <- list.files(data_directory_path, pattern="*.csv", full.names=TRUE)
 list_of_dataframes <- lapply(filenames, read.csv)

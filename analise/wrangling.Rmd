@@ -20,7 +20,7 @@ library(ggplot2)
 ```{r}
 # Read files from one folder and bind them together into one df
 
-data_directory_path = "~/Analytics/MBServer/analise/testData"
+data_directory_path = "testData"
 
 filenames <- list.files(data_directory_path, pattern="*.csv", full.names=TRUE)
 list_of_dataframes <- lapply(filenames, read.csv)
@@ -105,28 +105,50 @@ A velocidade máxima para ônibus em trechos urbanos é de 90 km/h.
 # Filtrando velocidades irreais (muito altas)
 temp4 <- temp3 %>% filter(velocityKmh <= 90)
 
-# filtrando viagens sem problemas
-temp5 <- temp4 %>% filter(problem == "NO_PROBLEM")
+# filtrando viagens sem problemas e interpoladas
+temp5 <- temp4 %>% filter(problem %in% c("NO_PROBLEM", "BETWEEN"))
 
-p <- ggplot(temp5, aes(x = "velocidade", y = velocityKmh, colour = problem))
-p + geom_jitter(aes(alpha = 0.5))
+p <- ggplot(temp5, aes(x = "velocidade", y = velocityKmh))
+p + geom_jitter(aes(alpha = 0.5, colour = problem))
 
-p + geom_boxplot()
+p + geom_boxplot(aes(colour="red"))
+```
 
+É possível perceber que cerca de 75% das observações tem velocidade abaixo de 35 km/h, sendo a mediana próxima de 25 km/k.
+
+```{r}
 p <- ggplot(temp5, aes(x = as.factor(hourOrig), y = duration, colour = problem))
 p + geom_jitter(aes(alpha = 0.5))
 ```
 
-Há alguns outliers que serão filtrados.
+É notório que existem alguns outliers na visualização acima. 
+
+Vejamos a distribuição da duração das viagens entre paradas:
 
 ```{r}
-# temp5 <- temp5 %>% filter(duration <= 1500)
-# 
-# p <- ggplot(temp5, aes(x = as.factor(hourOrig), y = duration, colour = problem))
-# p + geom_jitter(aes(alpha = 0.5))
+percentile99 <- quantile(temp5$duration, .99)
+
+temp5 %>% 
+  ggplot(aes(y = duration, x = problem, colour=problem)) +
+  geom_jitter(aes(alpha = 0.5)) +
+  geom_violin() +
+  geom_hline(yintercept = percentile99)
 ```
- chega de filtros por enquanto.
- 
+
+Podemos perceber que 99% dos dados estão em uma faixa bem concentrada e os demais 1% estão bastante dispersos.
+
+Com isso, vamos filtrar as observações que tem a duração menor que o 99 percentil.
+
+```{r}
+temp5 <- temp5 %>% filter(duration <= percentile99)
+
+p <- ggplot(temp5, aes(x = as.factor(hourOrig), y = duration))
+p + geom_jitter(aes(alpha = 0.5, colour = problem))
+
+p + geom_boxplot()
+```
+
+Por fim, podemos ver que entre as 7 e 18 horas a duração das viagens entre paradas são bastante parecidas.
  
 ```{r}
 write.csv(x = temp5, file = "dadostratados.csv", row.names = F)

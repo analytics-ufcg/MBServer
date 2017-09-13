@@ -8,3 +8,4 @@ mbserver-env/
 python/src/config/
 src/handlers/*.pyc
 **/__init__.py
+.Rproj.user

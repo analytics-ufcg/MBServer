@@ -17,7 +17,7 @@ library(tidyverse)
 
 
 ```{r}
-dados.bulma <- read_csv("~/Analytics/MBServer/analise/dadostratados.csv")
+dados.bulma <- read_csv("dadostratados.csv")
 ```
 
 Comparando a hora com as demais horas do dia
@@ -34,7 +34,7 @@ temp1 <- left_join(temp1, summarised.dates, by = "date")
 
 # Diferença entre cada duração e a duração mediana do dia
 temp1 <- temp1 %>% mutate(
-  diffFromMedian = duration - median
+  diffFromMedian = duration - medianDuration
 )
 
 # Mediana das diferenças por hora
