@@ -13,21 +13,31 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(ggplot2)
 library(tidyverse)
+library(resample)
 ```
 
+Primeiramente importaremos os dados:
 
 ```{r}
 dados.bulma <- read_csv("dadostratados.csv")
 ```
 
-Comparando a hora com as demais horas do dia
-(Para aquele dia, como se comporta aquela hora em comparação com as demais)
+Vamos ver como se comportam as durações durante o dia:
+
+```{r}
+dados.bulma %>% 
+  ggplot(aes(x = as.factor(hourOrig), y = duration)) +
+  geom_boxplot()
+```
+
+Vemos que apenas os horários abaixo das 7 horas e acima das 18 horas parecem ser menores que os demais.
+
+Vamos comparar a hora com as demais horas do dia, ou seja, para cada dia, como se comporta aquela hora em comparação com as demais:
 
 ```{r}
 summarised.dates <- dados.bulma %>% group_by(date) %>%
   summarise(meanDuration = mean(duration),
             medianDuration = median(duration))
-
 
 temp1 <- dados.bulma %>% select(date, hourOrig, hourDest, duration)
 temp1 <- left_join(temp1, summarised.dates, by = "date")
@@ -51,6 +61,27 @@ ggplot(temp2, aes(as.factor(hourOrig), medianOfDiffs)) +
   labs(title = "Mediana das diferenças entre as durações de viagens e a duração mediana do dia")
 
 ```
+
+Podemos perceber que parece existir dois horários de pico, das 7 as 8 horas e das 14 as 18 horas.
+
+Vejamos se realmente existe uma diferença significativa:
+
+```{r}
+set.seed(66)
+
+boot.dados.bulma <- dados.bulma %>% 
+  group_by(hourOrig) %>% 
+  summarise(
+    y.025 = CI.bca(bootstrap(data = duration, statistic = mean, seed = 66, R = 100), probs = c(.025, .975))[1],
+    y.975 = CI.bca(bootstrap(data = duration, statistic = mean, seed = 66, R = 100), probs = c(.025, .975))[2]
+  )
+
+boot.dados.bulma %>% 
+  ggplot(aes(x = hourOrig, ymin = y.025, ymax = y.975)) +
+  geom_errorbar()
+```
+
+Podemos ver que os horários de pico determinados anteriormente, entre 7 e 8 horas tem viagens com duração maior que as anteriores e maiores que as viagens após as 19 horas, mas não se pode concluir nada sobre as demais. Definitivamente 18 horas é um horário de pico, visto que é maior que as demais.
 
 ## Dia da semana
 ```{r}
