@@ -27,6 +27,51 @@ list_of_dataframes <- lapply(filenames, read.csv)
 busData <- rbind.fill(list_of_dataframes)
 ```
 
+Primeiramente, vamos ver as variáveis que existem nos dados:
+
+```{r}
+str(busData)
+```
+
+Podemos ver que existem 37 variáveis, onde temos:
+* route                    : rota do ônibus
+* tripNumOrig              : o número da viagem do ônibus na origem
+* shapeId                  : o id do shape do ônibus
+* shapeSequence            : o ponto do shape que a viagem está atualmente
+* shapeLatOrig             : a latitude da origem do shape
+* shapeLonOrig             : a longitude da origem do shape
+* distanceTraveledShapeOrig: a distancia que o ônibus já viajou na origem.
+* busCode                  : o código do ônibus
+* gpsPointId               : o id do ponto do gps
+* gpsLat                   : a latitude do ponto do gps
+* gpsLon                   : a longitude do ponto do gps
+* distanceToShapePoint     : a distância do gps para o ponto do shape casado
+* timestampOrig            : o horário no ponto de origem
+* busStopIdOrig            : a parada do ônibus no ponto de origem
+* problem                  : o tipo de problema encontrado pelo BULMA que pode ser NO_PROBLEM, quando não houver problema, NO_SHAPE, quando nenhuma trip foi formada (gps sem shape na base de dados ou com pontos insuficientes para formar trip), TRIP_PROBLEM, quando não foi possível identificar ponto final/ponto inicial, OUTLIER_POINT, quando os pontos excederam o threshold de distância para o shape.
+* date                     : a data da viagem
+* busStopIdDest            : o ponto de ônibus do destino
+* timestampDest            : o horário no ponto de destino
+* tripNumDest              : o número da viagem do ônibus no destino
+* shapeLatDest             : a latitude do ponto do shape destino
+* shapeLonDest             : a longitude do ponto do shape destino
+* distanceTraveledShapeDest: a distancia que o ônibus já viajou no destino
+* duration                 : a duração entre a parada origem e destino
+* distance                 : a distancia entre a parada origem e destino
+* hourOrig                 : a hora de origem
+* hourDest                 : a hora de destino
+* isRushOrig               : indicativo se está em horário de pico na origem
+* isRushDest               : indicativo se está me horário de pico no destino
+* periodOrig               : o período na origem (manhã, tarde, noite)
+* periodDest               : o período no destino (manhã, tarde, noite)
+* weekDay                  : o dia da semana
+* weekOfYear               : a semana do ano
+* dayOfMonth               : o dia do mês
+* month                    : o mês
+* isHoliday                : indicativo se está em mês de férias
+* isWeekend                : indicativo se é final de semana
+* isRegularDay             : indicativo se está entre a terça e quinta inclusive
+
 Análises posssíveis:
 
 2) um panorama das distâncias entre as paradas
@@ -43,9 +88,8 @@ analises que queremos:
 2) Relação entre o dia da semana e a duração de uma viagem entre duas paradas
 3) Relação entre a área da cidade e a duração de uma viagem entre duas paradas
 
-
 ## Hora do dia
-Primeiro vamos plotar um gráfico de duração de viagens entre paradas por horas do dia.
+Agora vamos plotar um gráfico de duração de viagens entre paradas por horas do dia.
 ```{r}
 p <- ggplot(busData, aes(x = as.factor(hourOrig), y = duration, colour = problem))
 p + geom_jitter(aes(alpha = 0.5))
@@ -123,33 +167,59 @@ p + geom_jitter(aes(alpha = 0.5))
 
 É notório que existem alguns outliers na visualização acima. 
 
-Vejamos a distribuição da duração das viagens entre paradas:
+Vamos ver um ponto de corte aceitável para a duração:
 
 ```{r}
-percentile99 <- quantile(temp5$duration, .99)
+percentiles <- data.frame(perc = seq(0, 1, 0.0001))
 
+percentiles <- percentiles %>% 
+  mutate(
+    value = quantile(temp5$duration, perc),
+    diff = value - lag(value)     
+         )
+
+ggplot(percentiles, aes(x = perc, y = value)) +
+  geom_line()
+```
+
+Podemos ver que os dados estão bem concentrados até certo ponto, então vejamos as últimas observações para descobrirmos um bom ponto de corte de outliers:
+
+```{r}
+percentiles %>% 
+  arrange(-perc) %>% 
+  head(50)
+```
+
+Podemos ver que a diferença entre os valores dos percentis, os quais aumentam em 0.001 a cada linha, começam a aumentar repentinamente a partir do percentil 0.9984. Com isso, vamos estabelecer que a duração é um outlier quando for maior que 1100 segundos.
+
+Vamos verificar se este ponto de corte de duração faz sentido em relação ao geral:
+
+```{r}
+threshold <- 1100
 temp5 %>% 
   ggplot(aes(y = duration, x = problem, colour=problem)) +
   geom_jitter(aes(alpha = 0.5)) +
   geom_violin() +
-  geom_hline(yintercept = percentile99)
+  geom_hline(yintercept = threshold)
 ```
 
-Podemos perceber que 99% dos dados estão em uma faixa bem concentrada e os demais 1% estão bastante dispersos.
+Podemos perceber que no geral, as durações acima do ponto de corte estão bem dispersas, enquanto as que estão abaixo são mais concentradas.
 
-Com isso, vamos filtrar as observações que tem a duração menor que o 99 percentil.
+Com isso, vamos filtrar as observações que tem a duração menor que o limiar.
 
 ```{r}
-temp5 <- temp5 %>% filter(duration <= percentile99)
+temp6 <- temp5 %>% filter(duration <= threshold)
 
-p <- ggplot(temp5, aes(x = as.factor(hourOrig), y = duration))
+p <- ggplot(temp6, aes(x = as.factor(hourOrig), y = duration))
 p + geom_jitter(aes(alpha = 0.5, colour = problem))
 
 p + geom_boxplot()
 ```
 
-Por fim, podemos ver que entre as 7 e 18 horas a duração das viagens entre paradas são bastante parecidas.
+Vemos que alguns pontos ainda estão dispersos, mas estão bem mais concentrados do que antes do corte.
+
+Além disso, podemos ver que entre as 7 e 18 horas a duração das viagens entre paradas são bastante parecidas, enquanto as demais tem valores mais baixos.
  
 ```{r}
-write.csv(x = temp5, file = "dadostratados.csv", row.names = F)
+write.csv(x = temp6, file = "dadostratados.csv", row.names = F)
 ```
