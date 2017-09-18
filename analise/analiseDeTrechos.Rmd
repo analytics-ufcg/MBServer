@@ -69,14 +69,14 @@ Vejamos se realmente existe uma diferença significativa:
 ```{r}
 set.seed(66)
 
-boot.dados.bulma <- dados.bulma %>% 
+boot.dados.bulma.by.hour <- dados.bulma %>% 
   group_by(hourOrig) %>% 
   summarise(
     y.025 = CI.bca(bootstrap(data = duration, statistic = mean, seed = 66, R = 100), probs = c(.025, .975))[1],
     y.975 = CI.bca(bootstrap(data = duration, statistic = mean, seed = 66, R = 100), probs = c(.025, .975))[2]
   )
 
-boot.dados.bulma %>% 
+boot.dados.bulma.by.hour %>% 
   ggplot(aes(x = hourOrig, ymin = y.025, ymax = y.975)) +
   geom_errorbar()
 ```
@@ -84,6 +84,27 @@ boot.dados.bulma %>%
 Podemos ver que os horários de pico determinados anteriormente, entre 7 e 8 horas tem viagens com duração maior que as anteriores e maiores que as viagens após as 19 horas, mas não se pode concluir nada sobre as demais. Definitivamente 18 horas é um horário de pico, visto que é maior que as demais.
 
 ## Dia da semana
+Vejamos agora as durações para cada dia da semana:
+
+```{r}
+boot.dados.bulma.by.weekday <- dados.bulma %>% 
+  group_by(weekDay) %>% 
+  summarise(
+    y.025 = CI.bca(bootstrap(data = duration, statistic = mean, seed = 66, R = 100), probs = c(.025, .975))[1],
+    y.975 = CI.bca(bootstrap(data = duration, statistic = mean, seed = 66, R = 100), probs = c(.025, .975))[2]
+  )
+
+boot.dados.bulma.by.weekday %>% 
+  mutate(weekDay = factor(weekDay, levels = c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"))) %>% 
+  arrange(weekDay) %>% 
+  ggplot(aes(x = weekDay, ymin = y.025, ymax = y.975)) +
+  geom_errorbar()
+```
+
+Podemos perceber que o dia em que os ônibus mais demoram é a segunda-feira, visto que é o único que existe uma diferença significativa de duração em relação aos demais. A quinta-feira também tem uma duração mais elevada quando comparada aos demais, exceto à segunda-feira e quarta-feira.
+
+Vejamos agora outra abordagem, a diferença da duração da viagem em relação à duração mediana semanal.
+
 ```{r}
 summarised.weeks <- dados.bulma %>% group_by(weekOfYear) %>%
   summarise(medianWeek = median(duration))
@@ -102,12 +123,17 @@ temp4 <- temp3 %>% group_by(weekDay) %>%
    medianOfDiffs = median(diffFromMedian)
 )
 
-ggplot(temp4, aes(as.factor(weekDay), medianOfDiffs)) +
-  geom_bar(stat = "identity", fill = "#2f4c56", legend = FALSE) + 
-  scale_y_continuous("Média das diferenças (em segundos)") +
-  theme(axis.title.x = element_blank()) +
-  labs(title = "Quanto (em média) a mediana das durações de cada dia da semana difere \nda mediana das durações da semana")
+temp4 %>% 
+  mutate(weekDay = factor(weekDay, levels = c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"))) %>% 
+  arrange(weekDay) %>% 
+  ggplot(aes(as.factor(weekDay), medianOfDiffs)) +
+    geom_bar(stat = "identity", fill = "#2f4c56", legend = FALSE) + 
+    scale_y_continuous("Média das diferenças (em segundos)") +
+    theme(axis.title.x = element_blank()) +
+    labs(title = "Quanto (em média) a mediana das durações de cada dia da semana difere \nda mediana das durações da semana")
 ```
+
+Podemos ber que, assim como visto acima, a segunda-feira é o dia que tem maior diferença da duração em relação a mediana semanal, seguido pela quinta-feira.
 
 ## Área da cidade
 

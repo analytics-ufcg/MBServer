@@ -2,6 +2,7 @@ node_modules/
 config/
 docker/app/
 .Rhistory
+.RData
 .idea/
 mbserver-env/
 *.pyc
