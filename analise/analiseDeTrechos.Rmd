@@ -147,13 +147,11 @@ m <- get_map("Curitiba",zoom=11,maptype="roadmap",source="google")
 g <- ggmap(m)
 g +
   stat_density2d(aes(x = shapeLonOrig, y = shapeLatOrig, fill=duration, colour = duration), data=dados.bulma,geom="polygon", alpha=0.2) +
-  scale_fill_gradient(low = "yellow", high = "red") +
-  facet_wrap(~date)
+  scale_fill_gradient(low = "yellow", high = "red")
 
 g +
   geom_point(aes(x = shapeLonOrig, y = shapeLatOrig, color = duration), data = dados.bulma) + 
-  geom_point(size=3,alpha=1) +
-  facet_wrap(~date)
+  geom_point(size=3,alpha=1)
 
 # ggmap(m) + 
 #   geom_density2d(data = dados.bulma, aes(x = shapeLonOrig, y = shapeLatOrig), size = 0.3) +
