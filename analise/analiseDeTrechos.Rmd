@@ -161,3 +161,31 @@ g +
 #   scale_alpha(range = c(0, 0.3), guide = FALSE)
 ```
 
+Podemos ver que a região da cudade com maior duração é o centro.
+
+Vamos fazer um grid com a latitude entre -25.67 e -25.33 e longitude entre -49.40 e -49.07.
+
+```{r}
+lat.min <- -25.67
+lat.max <- -25.32
+lon.min <- -49.40
+lon.max <- -49.07
+
+lat.step <- (lat.max - lat.min) / 50
+lon.step <- (lon.max - lon.min) / 50
+
+dados.bulma.grid <- dados.bulma %>% 
+  mutate(
+    lat.grid.index = floor((shapeLatOrig - lat.min) / lat.step),
+    lon.grid.index = floor((shapeLonOrig - lon.min) / lon.step)
+  )
+
+g +
+  geom_point(aes(x = shapeLonOrig, y = shapeLatOrig, color = as.factor(lat.grid.index)), data = dados.bulma.grid) + 
+  geom_point(size=3,alpha=1)
+
+g +
+  geom_point(aes(x = shapeLonOrig, y = shapeLatOrig, color = as.factor(lon.grid.index)), data = dados.bulma.grid) + 
+  geom_point(size=3,alpha=1)
+```
+
