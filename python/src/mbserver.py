@@ -48,11 +48,12 @@ app = tornado.web.Application([
 def start_up():
     global spark_handler
     global prediction_handler
-    model_path = btr_otp_config.MODEL_PATH
+    duration_model_path = btr_otp_config.DURATION_MODEL_PATH
+    crowdedness_model_path = btr_otp_config.CROWDEDNESS_MODEL_PATH
     pipeline_path = btr_otp_config.PIPELINE_PATH
     routes_stops_path = btr_otp_config.ROUTES_STOPS_PATH
-    app_name = "Duration Prediction"
-    spark_handler = SparkHandler(app_name, model_path, pipeline_path, routes_stops_path)
+    app_name = "Best Trip Recommender"
+    spark_handler = SparkHandler(app_name, duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
     prediction_handler = PredictionHandler(spark_handler)
     parse_command_line()
     app.listen(options.port)
