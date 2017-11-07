@@ -10,12 +10,13 @@ from tornado.options import define, options, parse_command_line
 
 from handlers.spark_handler import SparkHandler
 from handlers.prediction_handler import PredictionHandler
+from handlers.bigsea_manager_handler import BigseaManagerHandler
 from config import btr_otp_config
 
 define("port", default=8888, help="run on the given port", type=int)
 
 
-class IndexHandler(tornado.web.RequestHandler):
+class RoutesPlansHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.coroutine
     def post(self):
@@ -39,15 +40,27 @@ class IndexHandler(tornado.web.RequestHandler):
 
         self.write(otp_data_predicted)
 
+class BigseaHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    @gen.coroutine
+    def get(self):
+
+        result = bigsea_handler.getTemplate()
+
+
+        self.write(result)
+
 
 app = tornado.web.Application([
-    (r'/btr_routes_plans', IndexHandler)
+    (r'/btr_routes_plans', RoutesPlansHandler),
+    (r'/update', BigseaHandler)
 ])
 
 
 def start_up():
     global spark_handler
     global prediction_handler
+    global bigsea_handler
     duration_model_path = btr_otp_config.DURATION_MODEL_PATH
     crowdedness_model_path = btr_otp_config.CROWDEDNESS_MODEL_PATH
     pipeline_path = btr_otp_config.PIPELINE_PATH
@@ -55,6 +68,7 @@ def start_up():
     app_name = "Best Trip Recommender"
     spark_handler = SparkHandler(app_name, duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
     prediction_handler = PredictionHandler(spark_handler)
+    bigsea_handler = BigseaManagerHandler()
     parse_command_line()
     app.listen(options.port)
     print "MBServer started!"

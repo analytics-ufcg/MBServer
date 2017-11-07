@@ -35,8 +35,6 @@ class PredictionHandler:
 
         bus_crowdedness = map(lambda e: e["prediction"], crowdedness_predictions)
 
-        print bus_crowdedness
-
         crowdedness = sum(bus_crowdedness) / len(bus_crowdedness)
 
         return (duration, crowdedness)
