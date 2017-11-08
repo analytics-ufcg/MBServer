@@ -8,8 +8,8 @@ from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 from tornado.options import define, options, parse_command_line
 
-from handlers.spark_handler import SparkHandler
-from handlers.prediction_handler import PredictionHandler
+#from handlers.spark_handler import SparkHandler
+#from handlers.prediction_handler import PredictionHandler
 from handlers.bigsea_manager_handler import BigseaManagerHandler
 from config import btr_otp_config
 
@@ -45,7 +45,7 @@ class BigseaHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
 
-        result = bigsea_handler.getTemplate()
+        result = bigsea_handler.runJob()
 
 
         self.write(result)
@@ -66,8 +66,8 @@ def start_up():
     pipeline_path = btr_otp_config.PIPELINE_PATH
     routes_stops_path = btr_otp_config.ROUTES_STOPS_PATH
     app_name = "Best Trip Recommender"
-    spark_handler = SparkHandler(app_name, duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
-    prediction_handler = PredictionHandler(spark_handler)
+    #spark_handler = SparkHandler(app_name, duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
+    #prediction_handler = PredictionHandler(spark_handler)
     bigsea_handler = BigseaManagerHandler()
     parse_command_line()
     app.listen(options.port)
