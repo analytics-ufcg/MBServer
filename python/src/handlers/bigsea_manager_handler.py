@@ -1,5 +1,6 @@
 
 import ConfigParser
+import os
 from lib.bigsea_manager import BrokerClient
 from config import btr_otp_config
 
@@ -7,7 +8,7 @@ from config import btr_otp_config
 class BigseaManagerHandler:
 
 	def __init__(self):
-		self.preprocConfig = btr_otp_config.PREPROC_JOB_CONFIG 
+		self.configFolder = btr_otp_config.PREPROC_JOB_CONFIG 
 
 	def getConfig(self):
 
@@ -19,12 +20,12 @@ class BigseaManagerHandler:
 
 		return template
 
-	def runJob(self):
+	def runJob(self, job):
 
 		config = ConfigParser.RawConfigParser()
 
-		# __file__ = os.path.join()
-		config.read(self.preprocConfig)
+		__file__ = os.path.join(self.configFolder, job+".cfg")
+		config.read(__file__)
 
 		client = BrokerClient(config)
 		app_id = client.execute_application()

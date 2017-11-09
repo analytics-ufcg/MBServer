@@ -45,7 +45,9 @@ class BigseaHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
 
-        result = bigsea_handler.runJob()
+        job = self.get_argument('job')
+
+        result = bigsea_handler.runJob(job)
 
 
         self.write(result)
@@ -53,7 +55,7 @@ class BigseaHandler(tornado.web.RequestHandler):
 
 app = tornado.web.Application([
     (r'/btr_routes_plans', RoutesPlansHandler),
-    (r'/update', BigseaHandler)
+    (r'/run', BigseaHandler)
 ])
 
 
