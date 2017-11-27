@@ -7,7 +7,7 @@ from pyspark import SparkConf
 from pyspark import SparkContext
 from pyspark import SQLContext
 from pyspark.ml.feature import VectorAssembler
-from pyspark.ml import Pipeline
+from pyspark.ml import PipelineModel
 from pyspark.ml.regression import LinearRegressionModel
 
 
@@ -18,9 +18,17 @@ class SparkHandler:
         self.sqlContext = SQLContext(self.sc)
         self.duration_model = LinearRegressionModel.load(duration_model_path)
         self.crowdedness_model = LinearRegressionModel.load(crowdedness_model_path)
-        self.pipeline = Pipeline.load(pipeline_path)
+        self.pipeline = PipelineModel.load(pipeline_path)
         self.intermediate_stops_extraction_handler = IntermediateStopsExtractionHandler(self.sc, self.sqlContext,
                                                                                         routes_stops_path)
+
+    def updateResources(duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path):
+        self.duration_model = LinearRegressionModel.load(duration_model_path)
+        self.crowdedness_model = LinearRegressionModel.load(crowdedness_model_path)
+        self.pipeline = PipelineModel.load(pipeline_path)
+        self.intermediate_stops_extraction_handler = IntermediateStopsExtractionHandler(self.sc, self.sqlContext,
+                                                                                        routes_stops_path)
+
 
     def predictDuration(self, test_data):
         # predicting_json_example = {"periodOrig": "morning", "weekDay": "Mon", "route": "203",
@@ -31,10 +39,11 @@ class SparkHandler:
         #                           "isHoliday": 0, "isWeekend": 1, "isRegularDay": 0, "distance": 362.501}
 
         df = self.intermediate_stops_extraction_handler.extract_intermediate_stops(test_data)
+
         assembled_df = self.data_pre_proc(df=df,
-                                          string_columns=["periodOrig", "weekDay", "route"],
+                                          string_columns=["periodOrig", "weekDay"],#, "route"],
                                           features=["shapeLatOrig", "shapeLonOrig",
-                                                    "busStopIdOrig", "busStopIdDest", "shapeLatDest", "shapeLonDest",
+                                                    "shapeLatDest", "shapeLonDest",
                                                     "hourOrig", "isRushOrig", "weekOfYear", "dayOfMonth",
                                                     "month", "isHoliday", "isWeekend", "isRegularDay", "distance"])
 
@@ -52,9 +61,9 @@ class SparkHandler:
 
         df = self.intermediate_stops_extraction_handler.extract_intermediate_stops(test_data)
         assembled_df = self.data_pre_proc(df=df,
-                                          string_columns=["periodOrig", "weekDay", "route"],
+                                          string_columns=["periodOrig", "weekDay"],#, "route"],
                                           features=["shapeLatOrig", "shapeLonOrig",
-                                                    "busStopIdOrig", "busStopIdDest", "shapeLatDest", "shapeLonDest",
+                                                    "shapeLatDest", "shapeLonDest",
                                                     "hourOrig", "isRushOrig", "weekOfYear", "dayOfMonth",
                                                     "month", "isHoliday", "isWeekend", "isRegularDay", "distance"])
 
@@ -63,15 +72,10 @@ class SparkHandler:
         return prediction.toJSON()
 
     def data_pre_proc(self, df, string_columns, features):
+
         df = df.na.drop(subset=string_columns + features)
 
-        df_r = self.pipeline.fit(df).transform(df)
-
-        assembler = VectorAssembler(
-            inputCols=features + map(lambda c: c + "_index", string_columns),
-            outputCol='features')
-
-        assembled_df = assembler.transform(df_r)
+        assembled_df = self.pipeline.transform(df)
 
         return assembled_df
 

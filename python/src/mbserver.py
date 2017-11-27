@@ -8,8 +8,8 @@ from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 from tornado.options import define, options, parse_command_line
 
-#from handlers.spark_handler import SparkHandler
-#from handlers.prediction_handler import PredictionHandler
+from handlers.spark_handler import SparkHandler
+from handlers.prediction_handler import PredictionHandler
 from handlers.bigsea_manager_handler import BigseaManagerHandler
 from config import btr_otp_config
 
@@ -40,6 +40,13 @@ class RoutesPlansHandler(tornado.web.RequestHandler):
 
         self.write(otp_data_predicted)
 
+    def get(self):
+
+        spark_handler.update(duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
+
+        self.write('True')
+
+
 class BigseaHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.coroutine
@@ -49,13 +56,13 @@ class BigseaHandler(tornado.web.RequestHandler):
 
         result = bigsea_handler.runJob(job)
 
-
         self.write(result)
 
 
 app = tornado.web.Application([
     (r'/btr_routes_plans', RoutesPlansHandler),
-    (r'/run', BigseaHandler)
+    (r'/run', BigseaHandler),
+    (r'/update', RoutesPlansHandler)
 ])
 
 
@@ -63,13 +70,14 @@ def start_up():
     global spark_handler
     global prediction_handler
     global bigsea_handler
+    global duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path
     duration_model_path = btr_otp_config.DURATION_MODEL_PATH
     crowdedness_model_path = btr_otp_config.CROWDEDNESS_MODEL_PATH
     pipeline_path = btr_otp_config.PIPELINE_PATH
     routes_stops_path = btr_otp_config.ROUTES_STOPS_PATH
     app_name = "Best Trip Recommender"
-    #spark_handler = SparkHandler(app_name, duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
-    #prediction_handler = PredictionHandler(spark_handler)
+    spark_handler = SparkHandler(app_name, duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
+    prediction_handler = PredictionHandler(spark_handler)
     bigsea_handler = BigseaManagerHandler()
     parse_command_line()
     app.listen(options.port)

@@ -23,6 +23,7 @@ class PredictionHandler:
 
         # Duration
         rdd_duration_pred = self.sparkHandler.predictDuration(bus_legs)
+
         duration_predictions = map(ast.literal_eval, rdd_duration_pred.collect())
 
         bus_duration = map(lambda e: e["prediction"], duration_predictions)
@@ -42,7 +43,8 @@ class PredictionHandler:
     def get_btr_prediction(self, otp_data, request_params):
         feature_extraction_handler = FeatureExtractionHandler(request_params)
         for it in otp_data["plan"]["itineraries"]:
-            it["btr-duration"] = self.get_btr_duration(it["legs"], feature_extraction_handler)[0]
-            it["btr-crowdedness"] = self.get_btr_duration(it["legs"], feature_extraction_handler)[1]
+            pred = self.get_btr_duration(it["legs"], feature_extraction_handler)
+            it["btr-duration"] = pred[0]
+            it["btr-crowdedness"] = pred[1]
 
         return otp_data

@@ -24,7 +24,7 @@ class BigseaManagerHandler:
 
 		config = ConfigParser.RawConfigParser()
 
-		__file__ = os.path.join(self.configFolder, job+".cfg")
+		__file__ = os.path.join(self.configFolder, job + ".cfg")
 		config.read(__file__)
 
 		client = BrokerClient(config)

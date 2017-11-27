@@ -11,7 +11,7 @@ class FeatureExtractionHandler:
         self.is_rush_hour = 1 if self.hour in [6, 7, 11, 12, 17, 18] else 0
 
         self.weekday = self.date_fmt.weekday()
-        wd = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        wd = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"]
         self.weekday_str = wd[self.weekday]
 
         self.week_of_year = self.date_fmt.isocalendar()[1]
