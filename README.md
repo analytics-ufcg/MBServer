@@ -13,7 +13,7 @@ One of the features of BTR is the prediction of bus trips duration. The input is
 | Endpoint  | /btr_routes_plans |
 | Method | POST |
 | Content Type  | application/json  |
-| Returned Value | A JSON formated string with all the itineraries suggested. |
+| Returned Value | A JSON formated string containing the suggested itineraries with their predicted duration. |
 
 | Argument | Description |
 | -------- | -------- |
