@@ -47,6 +47,8 @@ class SparkHandler:
                                                     "hourOrig", "isRushOrig", "weekOfYear", "dayOfMonth",
                                                     "month", "isHoliday", "isWeekend", "isRegularDay", "distance"])
 
+        print assembled_df.columns
+
         prediction = self.duration_model.transform(assembled_df)
 
         return prediction.toJSON()
@@ -66,6 +68,8 @@ class SparkHandler:
                                                     "shapeLatDest", "shapeLonDest",
                                                     "hourOrig", "isRushOrig", "weekOfYear", "dayOfMonth",
                                                     "month", "isHoliday", "isWeekend", "isRegularDay", "distance"])
+
+        print "Crowdedness" , assembled_df.columns
 
         prediction = self.crowdedness_model.transform(assembled_df)
 

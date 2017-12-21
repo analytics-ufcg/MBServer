@@ -13,6 +13,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY handlers/ handlers/
+COPY lib/ lib/
 COPY mbserver.py .
 COPY requirements.txt .
 

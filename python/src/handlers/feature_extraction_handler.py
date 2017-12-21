@@ -22,6 +22,8 @@ class FeatureExtractionHandler:
     def feature_extractor(self, leg):
         features = dict()
 
+        features["route"] = leg["route"]
+
         features["distance"] = leg["distance"]
 
         features["hourOrig"] = int(self.hour)
@@ -35,8 +37,6 @@ class FeatureExtractionHandler:
         features["isHoliday"] = self.is_holiday
         features["isWeekend"] = self.is_weekend
         features["isRegularDay"] = self.is_regular_day
-
-        features["route"] = leg["route"]
 
         features["shapeLatOrig"] = leg["from"]["lat"]
         features["shapeLonOrig"] = leg["from"]["lon"]
