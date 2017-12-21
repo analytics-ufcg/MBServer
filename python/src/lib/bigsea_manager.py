@@ -25,6 +25,9 @@ class BrokerClient(object):
         self.job_binary_url = config.get('plugin', 'job_binary_url')
         self.input_ds_id = ''
         self.output_ds_id = ''
+        self.percentage = config.get('plugin', 'percentage')
+        self.app_name = config.get('plugin', 'app_name')
+        self.days = config.get('plugin', 'days')
         self.plugin_app = config.get('plugin', 'plugin_app')
         self.expected_time = config.getint('plugin', 'expected_time')
         self.number_of_jobs = config.getint('plugin', 'number_of_jobs')
@@ -54,20 +57,19 @@ class BrokerClient(object):
 
     def execute_application(self):
         headers = {'Content-Type': 'application/json'}
-        body = dict(plugin=self.plugin, scaler_plugin=self.scaler_plugin, scaling_parameters=self.scaling_parameters, cluster_size=self.cluster_size, starting_cap=self.starting_cap, actuator=self.actuator, flavor_id=self.flavor_id, image_id=self.image_id, opportunistic=self.opportunistic, args=self.args, main_class=self.main_class, job_template_name=self.job_template_name, job_binary_name=self.job_binary_name, job_binary_url=self.job_binary_url, input_ds_id=self.input_ds_id, output_ds_id=self.output_ds_id, plugin_app=self.plugin_app, expected_time=self.expected_time, number_of_jobs=self.number_of_jobs, collect_period=self.collect_period, bigsea_username=self.bigsea_username, bigsea_password=self.bigsea_password, openstack_plugin=self.openstack_plugin, job_type=self.job_type, version=self.version, opportunistic_slave_ng=self.opportunistic_slave_ng, slave_ng=self.slave_ng, master_ng=self.master_ng, net_id=self.net_id, dependencies=self.dependencies)
+        body = dict(app_name=self.app_name, days=self.days, plugin=self.plugin, percentage=self.percentage, scaler_plugin=self.scaler_plugin, scaling_parameters=self.scaling_parameters, cluster_size=self.cluster_size, starting_cap=self.starting_cap, actuator=self.actuator, flavor_id=self.flavor_id, image_id=self.image_id, opportunistic=self.opportunistic, args=self.args, main_class=self.main_class, job_template_name=self.job_template_name, job_binary_name=self.job_binary_name, job_binary_url=self.job_binary_url, input_ds_id=self.input_ds_id, output_ds_id=self.output_ds_id, plugin_app=self.plugin_app, expected_time=self.expected_time, number_of_jobs=self.number_of_jobs, collect_period=self.collect_period, bigsea_username=self.bigsea_username, bigsea_password=self.bigsea_password, openstack_plugin=self.openstack_plugin, job_type=self.job_type, version=self.version, opportunistic_slave_ng=self.opportunistic_slave_ng, slave_ng=self.slave_ng, master_ng=self.master_ng, net_id=self.net_id, dependencies=self.dependencies)
 
         url = "http://%s:%s/manager/execute" % (self.ip, self.port)
         r = requests.post(url, headers=headers, data=json.dumps(body))
         self.app_id =  r.content
-
         return self.app_id
 
     def get_execution_log(self):
         if self.app_id == None:
             return None
 
-        url_execution_log = "http://%s:%s/manager/logs/execution/%s" % (self.ip,
-                                                                        self.port,
+        url_execution_log = "http://%s:%s/manager/logs/execution/%s" % (self.ip, 
+                                                                        self.port, 
                                                                         self.app_id)
         r = requests.get(url_execution_log).json()
         return r
@@ -76,8 +78,8 @@ class BrokerClient(object):
         if self.app_id == None:
             return None
 
-        url_std_log = "http://%s:%s/manager/logs/std/%s" % (self.ip,
-                                                            self.port,
+        url_std_log = "http://%s:%s/manager/logs/std/%s" % (self.ip, 
+                                                            self.port, 
                                                             self.app_id)
         r = requests.get(url_std_log).json()
         return r
@@ -89,4 +91,5 @@ if __name__ == "__main__":
     config.read(__file__)
 
     client = BrokerClient(config)
-    client.execute_application()
+    app = client.execute_application()
+    print app

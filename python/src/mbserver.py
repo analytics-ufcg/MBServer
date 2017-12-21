@@ -42,7 +42,7 @@ class RoutesPlansHandler(tornado.web.RequestHandler):
 
     def get(self):
 
-        spark_handler.update(duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
+        spark_handler.updateResources(duration_model_path, crowdedness_model_path, pipeline_path, routes_stops_path)
 
         self.write('True')
 
@@ -58,11 +58,17 @@ class BigseaHandler(tornado.web.RequestHandler):
 
         self.write(result)
 
+class HealthMonitorHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        self.write("Everything is fine.")
+
 
 app = tornado.web.Application([
     (r'/btr_routes_plans', RoutesPlansHandler),
     (r'/run', BigseaHandler),
-    (r'/update', RoutesPlansHandler)
+    (r'/update', RoutesPlansHandler),
+    (r'/status', HealthMonitorHandler)
 ])
 
 

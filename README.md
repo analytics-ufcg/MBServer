@@ -1,4 +1,4 @@
-# MBServer
+# BTR API
 
 Melhor Busao Server (MBServer) is a Web Service which exposes the Best Trip Recommender (BTR) features to applications.
 
